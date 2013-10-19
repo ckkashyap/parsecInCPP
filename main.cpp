@@ -34,6 +34,16 @@ Parser<char> sat(std::function<bool(char)> p) {
 }
 
 
+Parser<char>plus(Parser<char> p1, Parser<char> p2) {
+  return [=] (std::string str) {
+    auto r1 = p1(str);
+    auto r2 = p2(str);
+    r1.insert(r1.end(), r2.begin(), r2.end());
+    return r1;
+  };
+}
+
+
 using Dingo = char; //std::tuple<char,char>;
 //
 Parser<Dingo> seq1(Parser<char> p1, Parser<char> p2) {
@@ -55,9 +65,11 @@ Parser<Dingo> seq1(Parser<char> p1, Parser<char> p2) {
 int main(int argc, char *argv[]) {
 
   int i {10};
-  auto p = sat([] (char c) { return c == 'A'; });
+  auto pA = sat([] (char c) { return c == 'A'; });
+  auto pB = sat([] (char c) { return c == 'B'; });
+  auto pAorB = plus(pA, pB);
   //  auto p = seq1(item(), item());//result(i);
-  auto x = p("ABC");
+  auto x = pAorB("XBC");
   std::cout << x.size() << std::endl;
   if (x.size() > 0) {
     auto z = std::get<0>(x[0]);
