@@ -34,14 +34,25 @@ Parser<char> sat(std::function<bool(char)> p) {
 }
 
 
-Parser<char>plus(Parser<char> p1, Parser<char> p2) {
-  return [=] (std::string str) {
-    auto r1 = p1(str);
-    auto r2 = p2(str);
-    r1.insert(r1.end(), r2.begin(), r2.end());
-    return r1;
+using charList = std::vector<char>;
+
+Parser <charList> many (Parser<char> p) {
+  std::cout << "Enter many" << std::endl;
+  std::function<Parser<charList>(char)> f = [=] (char c) {
+    std::function<Parser<charList>(charList)> g = [=] (charList list) {
+      std::cout << "DINGO" << std::endl;
+      charList r {c};
+      r.insert(r.end(), list.begin(), list.end());
+      return result(r);
+    };
+    std::cout << "here also " << c << std::endl;
+    return bindParsers(many(p), g);
   };
+  charList v {};
+  return plus(bindParsers(p, f), result(v));
 }
+
+
 
 
 using Dingo = char; //std::tuple<char,char>;
@@ -65,15 +76,18 @@ Parser<Dingo> seq1(Parser<char> p1, Parser<char> p2) {
 int main(int argc, char *argv[]) {
 
   int i {10};
-  auto pA = sat([] (char c) { return c == 'A'; });
-  auto pB = sat([] (char c) { return c == 'B'; });
-  auto pAorB = plus(pA, pB);
+//  auto pA = sat([] (char c) { return c == 'A'; });
+//  auto pB = sat([] (char c) { return c == 'B'; });
+//  auto pAorB = plus(pA, pB);
+  auto pl = many(item());
   //  auto p = seq1(item(), item());//result(i);
-  auto x = pAorB("XBC");
+  auto x = pl("ABC");
   std::cout << x.size() << std::endl;
   if (x.size() > 0) {
     auto z = std::get<0>(x[0]);
-    std::cout << z << std::endl;
+    std::cout << "Match" << std::endl;
+  }else {
+    std::cout << "No match" << std::endl;
   }
 
   return 0;
