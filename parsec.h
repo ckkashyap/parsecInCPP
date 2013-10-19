@@ -25,7 +25,7 @@ Parser<A> result(A a) {
 }
 
 template<typename A>
-Parser<A> zero(A a) {
+Parser<A> zero() {
   return [=] (std::string str) {
     auto v = ResultVector<A> {};
     return v;
