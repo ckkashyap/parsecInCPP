@@ -1,4 +1,61 @@
-#include "parsec.h"
+#include <iostream>
+#include <fstream>
+#include <regex>
+#include <tuple>
+#include <functional>
+
+
+template <typename A>
+using ResultTuple = std::tuple<A, std::string>;
+
+template <typename A>
+using ResultVector = std::vector<ResultTuple<A>>;
+
+// Parser :: a -> [(a, String)]
+template<typename A>
+using Parser = std::function< ResultVector<A> (std::string)>;
+
+template<typename A>
+Parser<A> result(A a) {
+  return [=] (std::string str) {
+    auto t = ResultTuple<A> {a, str};
+    auto v = ResultVector<A> {t};
+    return v;
+  };
+}
+
+//bind :: Parser a -> (a -> Parser b) -> Parser b
+template <typename A, typename B>
+Parser<B> bindParsers(Parser<A> p, std::function<Parser<B> (A)> f) {
+  return [=] (std::string inp) {
+    ResultVector<B> retList {};
+    ResultVector<A> pResult = p(inp);
+
+    for(auto pResultItem : pResult) {
+      A v = std::get<0>(pResultItem);
+      std::string inpPrime = std::get<1>(pResultItem);
+      Parser<B> newParser = f(v);
+      ResultVector<B> innerResultVector = newParser(inpPrime);
+
+      for(auto pInnerResultItem: innerResultVector) {
+    	retList.push_back(pInnerResultItem);
+      }
+    }
+    return retList;    
+  };
+}
+
+
+template<typename A>
+Parser<A>plus(Parser<A> p1, Parser<A> p2) {
+  return [=] (std::string str) {
+    auto r1 = p1(str);
+    auto r2 = p2(str);
+    r1.insert(r1.end(), r2.begin(), r2.end());
+    return r1;
+  };
+}
+
 
 
 Parser<char> zeroChar() {
@@ -34,58 +91,44 @@ Parser<char> sat(std::function<bool(char)> p) {
 }
 
 
-using charList = std::vector<char>;
-
-Parser <charList> many (Parser<char> p) {
-  std::cout << "Enter many" << std::endl;
-  std::function<Parser<charList>(char)> f = [=] (char c) {
-    std::function<Parser<charList>(charList)> g = [=] (charList list) {
-      std::cout << "DINGO" << std::endl;
-      charList r {c};
+template <typename A>
+Parser <std::vector<A>> many (Parser<A> p) {
+  std::function<Parser<std::vector<A>>(A)> f = [=] (A c) {
+    std::function<Parser<std::vector<A>>(std::vector<A>)> g = [=] (std::vector<A> list) {
+      std::vector<A> r {c};
       r.insert(r.end(), list.begin(), list.end());
-      return result(r);
+      return result(std::move(r));
     };
-    std::cout << "here also " << c << std::endl;
     return bindParsers(many(p), g);
   };
-  charList v {};
+  std::vector<A> v {};
   return plus(bindParsers(p, f), result(v));
 }
 
 
 
-
-using Dingo = char; //std::tuple<char,char>;
-//
-Parser<Dingo> seq1(Parser<char> p1, Parser<char> p2) {
-  std::function<Parser<Dingo>(char)> g = [=] (char d) {
-    std::cout << d << std::endl;
-    Dingo v {};
-    return result(v);
-  };
-
-
-  std::function<Parser<char>(char)> f = [=] (char c) {
-    std::cout << c << std::endl;
-    return bindParsers(p2, g);
-  };
-  return bindParsers(p1, f);
-}
-
-
 int main(int argc, char *argv[]) {
 
   int i {10};
-//  auto pA = sat([] (char c) { return c == 'A'; });
-//  auto pB = sat([] (char c) { return c == 'B'; });
-//  auto pAorB = plus(pA, pB);
-  auto pl = many(item());
+  auto pA = sat([] (char c) { return c == 'A'; });
+  auto pB = sat([] (char c) { return c == 'B'; });
+  auto pAorB = plus(pA, pB);
+  auto pl = many(pAorB);
+
   //  auto p = seq1(item(), item());//result(i);
-  auto x = pl("ABC");
+  auto x = pl("ABC123");
   std::cout << x.size() << std::endl;
   if (x.size() > 0) {
-    auto z = std::get<0>(x[0]);
-    std::cout << "Match" << std::endl;
+    for(auto v: x) {
+      auto vv = std::get<0>(v);
+      auto rem = std::get<1>(v);
+      std::cout << "Result = ";
+      for (auto vvv: vv){
+	std::cout << vvv;
+      }
+      std::cout << " (remaining = )" << rem << std::endl;
+    }
+
   }else {
     std::cout << "No match" << std::endl;
   }
