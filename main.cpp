@@ -1,9 +1,9 @@
 #include <iostream>
 #include <fstream>
-#include <regex>
 #include <tuple>
 #include <functional>
-
+#include <vector>
+#include <string>
 
 template <typename A>
 using ResultTuple = std::tuple<A, std::string>;
