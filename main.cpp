@@ -57,13 +57,20 @@ Parser<A>plus(Parser<A> p1, Parser<A> p2) {
 }
 
 
-
-Parser<char> zeroChar() {
+template<typename A>
+Parser<A> zero() {
   return [=] (std::string str) {
-    ResultVector<char> v {};
+    ResultVector<A> v {};
     return v;
   };
 }
+
+//Parser<char> zeroChar() {
+//  return [=] (std::string str) {
+//    ResultVector<char> v {};
+//    return v;
+//  };
+//}
 
 
 Parser<char> item() {
@@ -79,12 +86,13 @@ Parser<char> item() {
   };
 }
 
-Parser<char> sat(std::function<bool(char)> p) {
-  std::function<Parser<char>(char)> f = [=] (char c) {
+template <typename A>
+Parser<A> sat(std::function<bool(A)> p) {
+  std::function<Parser<A>(A)> f = [=] (A c) {
     if(p(c)) {
       return result(c);
     } else {
-      return zeroChar();
+      return zero<A>();
     }
   };
   return bindParsers(item(), f);
@@ -110,8 +118,8 @@ Parser <std::vector<A>> many (Parser<A> p) {
 int main(int argc, char *argv[]) {
 
   int i {10};
-  auto pA = sat([] (char c) { return c == 'A'; });
-  auto pB = sat([] (char c) { return c == 'B'; });
+  auto pA = sat<char>([] (char c) { return c == 'A'; });
+  auto pB = sat<char>([] (char c) { return c == 'B'; });
   auto pAorB = plus(pA, pB);
   auto pl = many(pAorB);
 
