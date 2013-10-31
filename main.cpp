@@ -50,8 +50,10 @@ template<typename A>
 Parser<A>plus(Parser<A> p1, Parser<A> p2) {
   return [=] (std::string str) {
     auto r1 = p1(str);
-    auto r2 = p2(str);
-    r1.insert(r1.end(), r2.begin(), r2.end());
+    if (r1.size() == 0) {
+      auto r2 = p2(str);
+      return r2;
+    }
     return r1;
   };
 }
@@ -64,13 +66,6 @@ Parser<A> zero() {
     return v;
   };
 }
-
-//Parser<char> zeroChar() {
-//  return [=] (std::string str) {
-//    ResultVector<char> v {};
-//    return v;
-//  };
-//}
 
 
 Parser<char> item() {
@@ -134,7 +129,7 @@ int main(int argc, char *argv[]) {
       for (auto vvv: vv){
 	std::cout << vvv;
       }
-      std::cout << " (remaining = )" << rem << std::endl;
+      std::cout << " (remaining = " << rem << ")" << std::endl;
     }
 
   }else {
