@@ -15,14 +15,16 @@ using ResultVector = std::vector<ResultTuple<A>>;
 template<typename A>
 using Parser = std::function< ResultVector<A> (std::string)>;
 
-template<typename A>
+
+template <typename A>
 Parser<A> result(A a) {
-  return [=] (std::string str) {
-    auto t = ResultTuple<A> {a, str};
-    auto v = ResultVector<A> {t};
-    return v;
-  };
+  return std::bind([](A& a, std::string str) {
+      ResultVector<A> v;
+      v.emplace_back(std::move(a), std::move(str));
+      return v;
+    }, std::move(a), std::placeholders::_1);
 }
+
 
 //bind :: Parser a -> (a -> Parser b) -> Parser b
 template <typename A, typename B>
