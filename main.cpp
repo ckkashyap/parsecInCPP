@@ -5,6 +5,8 @@
 #include <vector>
 #include <string>
 
+namespace parsec {
+
 template <typename A>
 using ResultTuple = std::tuple<A, std::string>;
 
@@ -28,7 +30,7 @@ Parser<A> result(A a) {
 
 //bind :: Parser a -> (a -> Parser b) -> Parser b
 template <typename A, typename B>
-Parser<B> bindParsers(Parser<A> p, std::function<Parser<B> (A)> f) {
+Parser<B> bind(Parser<A> p, std::function<Parser<B> (A)> f) {
   return [=] (std::string inp) {
     ResultVector<B> retList {};
     ResultVector<A> pResult = p(inp);
@@ -92,7 +94,7 @@ Parser<A> sat(std::function<bool(A)> p) {
       return zero<A>();
     }
   };
-  return bindParsers(item(), f);
+  return bind(item(), f);
 }
 
 
@@ -104,16 +106,17 @@ Parser <std::vector<A>> many (Parser<A> p) {
       r.insert(r.end(), list.begin(), list.end());
       return result(std::move(r));
     };
-    return bindParsers(many(p), g);
+    return bind(many(p), g);
   };
   std::vector<A> v {};
-  return plus(bindParsers(p, f), result(v));
+  return plus(bind(p, f), result(v));
 }
 
-
+}
 
 int main(int argc, char *argv[]) {
 
+	using namespace parsec;
   int i {10};
   auto pA = sat<char>([] (char c) { return c == 'A'; });
   auto pB = sat<char>([] (char c) { return c == 'B'; });
