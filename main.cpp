@@ -28,9 +28,9 @@ namespace parsec {
   }
 
 
-  //bind :: Parser a -> (a -> Parser b) -> Parser b
+  //bindParsers :: Parser a -> (a -> Parser b) -> Parser b
   template <typename A, typename B>
-  Parser<B> bind(Parser<A> p, std::function<Parser<B> (A)> f) {
+  Parser<B> bindParsers(Parser<A> p, std::function<Parser<B> (A)> f) {
     return [=] (std::string inp) {
       ResultVector<B> retList {};
       ResultVector<A> pResult = p(inp);
@@ -94,7 +94,7 @@ namespace parsec {
 	return zero<A>();
       }
     };
-    return bind(item(), f);
+    return bindParsers(item(), f);
   }
 
 
@@ -106,10 +106,10 @@ namespace parsec {
 	r.insert(r.end(), list.begin(), list.end());
 	return result(std::move(r));
       };
-      return bind(many(p), g);
+      return bindParsers(many(p), g);
     };
     std::vector<A> v {};
-    return plus(bind(p, f), result(v));
+    return plus(bindParsers(p, f), result(v));
   }
 
   template <typename A>
@@ -121,15 +121,15 @@ namespace parsec {
   template <typename A>
   Parser <std::vector<A>> many1 (Parser<A> p) {
     std::function<Parser<std::vector<A>>(A)> f = [=] (A c) {
-      std::function<Parser<std::vector<A>>(std::vector<A>)> g = [=] (std::vector<A> list) {
+      std::function<Parser<std::vector<A>>(std::vector<A>)> g = [=] (std::vector<A> list) -> Parser<std::vector<A>> {
 	std::vector<A> r {c};
 	r.insert(r.end(), list.begin(), list.end());
 	return result(std::move(r));
       };
-      return bind(manyy(p), g);
+      return bindParsers(manyy(p), g);
     };
     std::vector<A> v {};
-    return plus(bind(p, f), result(v));
+    return plus(bindParsers(p, f), result(v));
   }
 
 }
