@@ -98,23 +98,27 @@ namespace parsec {
   }
 
 
-  template <typename A>
-  Parser <std::vector<A>> many (Parser<A> p) {
-    std::function<Parser<std::vector<A>>(A)> f = [=] (A c) {
-      std::function<Parser<std::vector<A>>(std::vector<A>)> g = [=] (std::vector<A> list) {
-	std::vector<A> r {c};
-	r.insert(r.end(), list.begin(), list.end());
-	return result(std::move(r));
-      };
-      return bindParsers(many(p), g);
-    };
-    std::vector<A> v {};
-    return plus(bindParsers(p, f), result(v));
-  }
+//  template <typename A>
+//  Parser <std::vector<A>> many (Parser<A> p) {
+//    std::function<Parser<std::vector<A>>(A)> f = [=] (A c) {
+//      std::function<Parser<std::vector<A>>(std::vector<A>)> g = [=] (std::vector<A> list) {
+//	std::vector<A> r {c};
+//	r.insert(r.end(), list.begin(), list.end());
+//	return result(std::move(r));
+//      };
+//      return bindParsers(many(p), g);
+//    };
+//    std::vector<A> v {};
+//    return plus(bindParsers(p, f), result(v));
+//  }
+
 
   template <typename A>
-  Parser <std::vector<A>> manyy (Parser<A> p) {
-    auto pp = many1(p);
+  Parser <std::vector<A>> many1 (Parser<A> p);
+
+  template <typename A>
+  Parser <std::vector<A>> many (Parser<A> p) {
+    Parser<std::vector<A>> pp = many1(p);
     return plus(pp, zero<std::vector<A>>());
   }
 
@@ -126,13 +130,35 @@ namespace parsec {
 	r.insert(r.end(), list.begin(), list.end());
 	return result(std::move(r));
       };
-      return bindParsers(manyy(p), g);
+      return bindParsers(many(p), g);
     };
     std::vector<A> v {};
     return plus(bindParsers(p, f), result(v));
   }
 
+  Parser<char> particularChar(char v) {
+    return sat<char>([=] (char c) { return v==c; });
+  }
+
+  Parser<char> digit() {
+    return sat<char>([] (char c) { return '0' <= c && '9' >=  c; });
+  }
+  Parser<char> lower() {
+    return sat<char>([] (char c) { return 'a' <= c && 'z' >=  c; });
+  }
+  Parser<char> upper() {
+    return sat<char>([] (char c) { return 'A' <= c && 'Z' >=  c; });
+  }
+  Parser<char> letter() {
+    return plus(lower(), upper());
+  }
+  Parser<char> alphanum() {
+    return plus(digit(), letter());
+  }
+
 }
+
+
 
 int main(int argc, char *argv[]) {
 
@@ -140,11 +166,11 @@ int main(int argc, char *argv[]) {
   int i {10};
   auto pA = sat<char>([] (char c) { return c == 'A'; });
   auto pB = sat<char>([] (char c) { return c == 'B'; });
-  auto pAorB = plus(pA, pB);
-  auto pl = manyy(pAorB);
+  Parser<char> pAorB = alphanum();
+  Parser<std::vector<char>> pl = many(pAorB);
 
   //  auto p = seq1(item(), item());//result(i);
-  auto x = pl("ABC123");
+  auto x = pl("ABC1232,");
   std::cout << x.size() << std::endl;
   if (x.size() > 0) {
     for(auto v: x) {
